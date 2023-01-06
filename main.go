@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -41,7 +40,13 @@ func loop(ipc chan signal) {
 		case <-ticker.C:
 			for _, item := range pool {
 				go func(item *followed) {
-					evs, err := sync(&item.pos)
+					change, err := sync(&item.pos)
+					if err != nil {
+						fmt.Println("[ERROR]", err)
+						ipc <- sfatal
+						return
+					}
+					evs, err := parseEvents(change)
 					if err != nil {
 						fmt.Println("[ERROR]", err)
 						ipc <- sfatal
@@ -55,48 +60,21 @@ func loop(ipc chan signal) {
 	ipc <- squit
 }
 
-func sync(item *cursor) (events, error) {
-	var evs events
+func sync(item *cursor) ([]byte, error) {
+	var buffer []byte
 	if err := item.update(); err != nil {
-		return evs, err
+		return buffer, err
 	}
 	if changed, err := item.isChanged(); err != nil {
-		return evs, err
+		return buffer, err
 	} else if !changed {
-		return evs, nil
+		return buffer, nil
 	}
 
 	buffer, err := item.latest()
 	if err != nil {
-		return evs, err
+		return buffer, err
 	}
 	item.earmark()
-
-	return parse(buffer)
-}
-
-func parse(b []byte) (events, error) {
-	splits := strings.Split(string(b), "\n")
-	result := make(events, 0, len(splits))
-	for _, s := range splits {
-		s = strings.TrimSpace(s)
-		if s == "" {
-			continue
-		}
-		result = append(result, s)
-	}
-	return result, nil
-}
-
-type events []string
-
-func (x events) emit(to []emitter) error {
-	for _, event := range x {
-		for _, e := range to {
-			if err := e.broadcast(event); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return buffer, nil
 }
