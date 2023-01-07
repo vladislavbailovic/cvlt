@@ -40,41 +40,21 @@ func loop(ipc chan signal) {
 		case <-ticker.C:
 			for _, item := range pool {
 				go func(item *followed) {
-					change, err := sync(&item.pos)
+					change, err := item.sync()
 					if err != nil {
 						fmt.Println("[ERROR]", err)
 						ipc <- sfatal
 						return
 					}
-					evs, err := parseEvents(change)
+					err = item.broadcast(change)
 					if err != nil {
 						fmt.Println("[ERROR]", err)
 						ipc <- sfatal
 						return
 					}
-					evs.emit(item.emitters)
 				}(item)
 			}
 		}
 	}
 	ipc <- squit
-}
-
-func sync(item *cursor) ([]byte, error) {
-	var buffer []byte
-	if err := item.update(); err != nil {
-		return buffer, err
-	}
-	if changed, err := item.isChanged(); err != nil {
-		return buffer, err
-	} else if !changed {
-		return buffer, nil
-	}
-
-	buffer, err := item.latest()
-	if err != nil {
-		return buffer, err
-	}
-	item.earmark()
-	return buffer, nil
 }

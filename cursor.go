@@ -21,9 +21,9 @@ func (x *cursor) update() error {
 	return nil
 }
 
-func (x *cursor) isChanged() (bool, error) {
+func (x *cursor) isChanged() bool {
 	if x.size > x.pos {
-		return true, nil
+		return true
 	}
 
 	// Rotated
@@ -31,12 +31,12 @@ func (x *cursor) isChanged() (bool, error) {
 		x.pos = 0
 		if x.size > 0 {
 			// Rotated, and some stuff added
-			return true, nil
+			return true
 		}
 	}
 
 	// Not changed
-	return false, nil
+	return false
 }
 
 func (x *cursor) latest() ([]byte, error) {

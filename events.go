@@ -26,7 +26,7 @@ func parseEvents(b []byte) (events, error) {
 func (x events) emit(to []emitter) error {
 	for _, event := range x {
 		for _, e := range to {
-			if err := e.broadcast(event); err != nil {
+			if err := e.update(event); err != nil {
 				return err
 			}
 		}

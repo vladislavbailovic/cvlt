@@ -3,12 +3,12 @@ package main
 import "fmt"
 
 type emitter interface {
-	broadcast(event) error
+	update(event) error
 }
 
 type cliEmitter int
 
-func (x cliEmitter) broadcast(e event) error {
+func (x cliEmitter) update(e event) error {
 	fmt.Printf("- %q\n", e)
 	return nil
 }
