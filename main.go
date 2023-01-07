@@ -13,23 +13,18 @@ func main() {
 	go loop(ipc)
 	for {
 		select {
-		case signal := <-ipc:
-			switch signal {
-			case squit:
-				os.Exit(0)
-			case sfatal:
-				os.Exit(1)
+		case sig := <-ipc:
+			if sig.err != nil {
+				fmt.Fprintf(
+					os.Stderr,
+					fmt.Sprintf("[ERROR] %v\n", sig.err))
+			}
+			if !sig.canContinue() {
+				os.Exit(sig.exitCode())
 			}
 		}
 	}
 }
-
-type signal int
-
-const (
-	squit signal = iota
-	sfatal
-)
 
 type cvlt []*followed
 
@@ -46,19 +41,21 @@ func loop(ipc chan signal) {
 				go func(item *followed) {
 					change, err := item.sync()
 					if err != nil {
-						fmt.Println("[ERROR]", err)
-						ipc <- sfatal
+						ipc <- signal{
+							code: sigUpdateError,
+							err:  err}
 						return
 					}
 					err = item.broadcast(change)
 					if err != nil {
-						fmt.Println("[ERROR]", err)
-						ipc <- sfatal
+						ipc <- signal{
+							code: sigBroadcastError,
+							err:  err}
 						return
 					}
 				}(item)
 			}
 		}
 	}
-	ipc <- squit
+	ipc <- signal{code: sigQuit}
 }
