@@ -13,7 +13,7 @@ type cliEmitter struct {
 func (x *cliEmitter) emit(evs events) error {
 	fmt.Println("==", x.name, "==")
 	for _, e := range evs {
-		fmt.Printf("\t- %q\n", e)
+		fmt.Printf("\t- [%s] %q\n", e.Timestamp(), e.Entry())
 	}
 	return nil
 }
