@@ -28,10 +28,16 @@ func newCvlt(cfg cvltConfig) (*cvlt, error) {
 		}
 	}
 
+	infix := "*"
+	if cfg.depth > 1 {
+		infix = "**"
+	}
+	name := filepath.Join(cfg.root, infix, cfg.match)
+
 	return &cvlt{
 		following: tails,
 		parser:    newEventParser(cfg.logType),
-		audience:  []emitter{new(cliEmitter)},
+		audience:  []emitter{&cliEmitter{name: name}},
 	}, nil
 }
 
@@ -57,6 +63,9 @@ func (x cvlt) sync(ipc chan signal) {
 }
 
 func (x cvlt) broadcast(change []byte) error {
+	if len(change) == 0 {
+		return nil
+	}
 	evs, err := x.parser(change)
 	if err != nil {
 		return err

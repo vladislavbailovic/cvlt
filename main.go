@@ -29,20 +29,32 @@ func main() {
 func loop(ipc chan signal) {
 	ticker := time.NewTicker(syncInterval)
 
-	c, err := newCvlt(cvltConfig{
-		// root:  "/data/docker/containers",
-		root:    "testdata",
-		match:   "*-json.log",
-		depth:   1,
-		logType: logTypeJSON,
-	})
-	if err != nil {
-		ipc <- signal{
-			code: sigInitError,
-			err:  err}
-		return
+	cfgs := []cvltConfig{
+		cvltConfig{
+			// root:  "/data/docker/containers",
+			root:    "testdata",
+			match:   "*-json.log",
+			depth:   1,
+			logType: logTypeJSON,
+		},
+		cvltConfig{
+			root:    "testdata",
+			match:   "test*.log",
+			depth:   1,
+			logType: logTypePlain,
+		},
 	}
-	pool := []*cvlt{c}
+	pool := make([]*cvlt, 0, len(cfgs))
+	for _, cfg := range cfgs {
+		c, err := newCvlt(cfg)
+		if err != nil {
+			ipc <- signal{
+				code: sigInitError,
+				err:  err}
+			return
+		}
+		pool = append(pool, c)
+	}
 
 	for {
 		select {
