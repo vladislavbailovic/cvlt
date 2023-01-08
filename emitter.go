@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 type emitter interface {
@@ -22,4 +27,32 @@ func (x *cliEmitter) emit(evs events) error {
 	}
 	fmt.Println(buf.String())
 	return nil
+}
+
+var fifoFileName string = "cvlt.fifo"
+
+type fifoEmitter int
+
+func newFifoEmitter() *fifoEmitter {
+	path := filepath.Join(os.TempDir(), fifoFileName)
+	syscall.Mkfifo(path, 0666)
+	return new(fifoEmitter)
+}
+
+func (x *fifoEmitter) emit(evs events) error {
+	path := filepath.Join(os.TempDir(), fifoFileName)
+	file, err := os.OpenFile(path, os.O_RDWR, os.ModeNamedPipe)
+	if err != nil {
+		panic(err)
+	}
+
+	var r bytes.Buffer
+	for _, e := range evs {
+		r.WriteString("\t- [" + e.Timestamp() + "] ")
+		r.WriteString(e.Entry() + "\n")
+	}
+
+	num, err := io.Copy(file, &r)
+	fmt.Println(num, "written")
+	return err
 }

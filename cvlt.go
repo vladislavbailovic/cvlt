@@ -28,16 +28,18 @@ func newCvlt(cfg cvltConfig) (*cvlt, error) {
 		}
 	}
 
-	infix := "*"
-	if cfg.depth > 1 {
-		infix = "**"
-	}
-	name := filepath.Join(cfg.root, infix, cfg.match)
+	// infix := "*"
+	// if cfg.depth > 1 {
+	// 	infix = "**"
+	// }
+	// name := filepath.Join(cfg.root, infix, cfg.match)
+	// emt := &cliEmitter{name: name}
+	emt := newFifoEmitter()
 
 	return &cvlt{
 		following: tails,
 		parser:    newEventParser(cfg.logType),
-		audience:  []emitter{&cliEmitter{name: name}},
+		audience:  []emitter{emt},
 	}, nil
 }
 
