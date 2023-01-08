@@ -25,6 +25,7 @@ func Test_ExitCode(t *testing.T) {
 		sigQuit,
 		sigInitError,
 		sigUpdateError,
+		sigParseError,
 		sigBroadcastError,
 	}
 	for want, c := range suite {

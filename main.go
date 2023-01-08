@@ -17,7 +17,7 @@ func main() {
 			if sig.err != nil {
 				fmt.Fprintf(
 					os.Stderr,
-					fmt.Sprintf("[ERROR] %v\n", sig.err))
+					fmt.Sprintf("[ERROR] %s: %v\n", sig.code.String(), sig.err))
 			}
 			if !sig.canContinue() {
 				os.Exit(sig.exitCode())

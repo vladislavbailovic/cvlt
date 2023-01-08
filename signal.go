@@ -6,6 +6,7 @@ const (
 	sigQuit code = iota
 	sigInitError
 	sigUpdateError
+	sigParseError
 	sigBroadcastError
 )
 
@@ -13,8 +14,12 @@ func (x code) String() string {
 	switch x {
 	case sigQuit:
 		return "Quit"
+	case sigInitError:
+		return "Initialization Error"
 	case sigUpdateError:
 		return "Update Error"
+	case sigParseError:
+		return "Event Parsing Error"
 	case sigBroadcastError:
 		return "Broadcast Error"
 	}

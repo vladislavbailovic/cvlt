@@ -51,7 +51,22 @@ func (x cvlt) sync(ipc chan signal) {
 					err:  err}
 				return
 			}
-			err = x.broadcast(change)
+			if len(change) == 0 {
+				return
+			}
+
+			evs, err := x.parse(change)
+			if err != nil {
+				ipc <- signal{
+					code: sigParseError,
+					err:  err}
+				return
+			}
+			if evs == nil {
+				return
+			}
+
+			err = x.broadcast(evs)
 			if err != nil {
 				ipc <- signal{
 					code: sigBroadcastError,
@@ -62,16 +77,18 @@ func (x cvlt) sync(ipc chan signal) {
 	}
 }
 
-func (x cvlt) broadcast(change []byte) error {
+func (x *cvlt) parse(change []byte) (events, error) {
 	if len(change) == 0 {
-		return nil
+		return nil, nil
 	}
-	evs, err := x.parser(change)
-	if err != nil {
-		return err
-	}
+	return x.parser(change)
+}
+
+func (x *cvlt) broadcast(evs events) error {
 	for _, rcv := range x.audience {
-		rcv.emit(evs)
+		if err := rcv.emit(evs); err != nil {
+			return err
+		}
 	}
 	return nil
 }
