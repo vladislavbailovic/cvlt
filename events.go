@@ -1,9 +1,28 @@
 package main
 
-import "strings"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
-type event string
+type event fmt.Stringer
 type events []event
+
+type rawEvent string
+
+func (x rawEvent) String() string {
+	return string(x)
+}
+
+type jsonLogEvent struct {
+	Time string `json:"time"`
+	Log  string `json:"log"`
+}
+
+func (x jsonLogEvent) String() string {
+	return fmt.Sprintf("[%s] %s", x.Time, x.Log)
+}
 
 func parseEvents(b []byte) (events, error) {
 	var result events
@@ -18,9 +37,17 @@ func parseEvents(b []byte) (events, error) {
 		if s == "" {
 			continue
 		}
-		result = append(result, event(s))
+		result = append(result, NewEvent(s))
 	}
 	return result, nil
+}
+
+func NewEvent(raw string) event {
+	var ev jsonLogEvent
+	if err := json.Unmarshal([]byte(raw), &ev); err != nil {
+		return rawEvent(raw)
+	}
+	return ev
 }
 
 func (x events) emit(to []emitter) error {
