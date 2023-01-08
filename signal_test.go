@@ -23,6 +23,7 @@ func Test_CanContinue(t *testing.T) {
 func Test_ExitCode(t *testing.T) {
 	suite := []code{
 		sigQuit,
+		sigInitError,
 		sigUpdateError,
 		sigBroadcastError,
 	}

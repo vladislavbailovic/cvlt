@@ -24,6 +24,8 @@ func (x jsonLogEvent) String() string {
 	return fmt.Sprintf("[%s] %s", x.Time, x.Log)
 }
 
+type eventParser func([]byte) (events, error)
+
 func parseEvents(b []byte) (events, error) {
 	var result events
 	if len(b) == 0 {

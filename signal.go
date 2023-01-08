@@ -4,6 +4,7 @@ type code int
 
 const (
 	sigQuit code = iota
+	sigInitError
 	sigUpdateError
 	sigBroadcastError
 )
