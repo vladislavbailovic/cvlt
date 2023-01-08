@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type emitter interface {
 	emit(events) error
@@ -11,9 +14,12 @@ type cliEmitter struct {
 }
 
 func (x *cliEmitter) emit(evs events) error {
-	fmt.Println("==", x.name, "==")
+	var buf strings.Builder
+	buf.WriteString("==" + x.name + "==\n")
 	for _, e := range evs {
-		fmt.Printf("\t- [%s] %q\n", e.Timestamp(), e.Entry())
+		buf.WriteString("\t- [" + e.Timestamp() + "] ")
+		buf.WriteString(e.Entry() + "\n")
 	}
+	fmt.Println(buf.String())
 	return nil
 }

@@ -41,7 +41,7 @@ func newCvlt(cfg cvltConfig) (*cvlt, error) {
 	}, nil
 }
 
-func (x cvlt) sync(ipc chan signal) {
+func (x *cvlt) sync(ipc chan signal) {
 	for _, item := range x.following {
 		go func(item *source) {
 			change, err := item.sync()
@@ -51,18 +51,12 @@ func (x cvlt) sync(ipc chan signal) {
 					err:  err}
 				return
 			}
-			if len(change) == 0 {
-				return
-			}
 
 			evs, err := x.parse(change)
 			if err != nil {
 				ipc <- signal{
 					code: sigParseError,
 					err:  err}
-				return
-			}
-			if evs == nil {
 				return
 			}
 
@@ -85,6 +79,9 @@ func (x *cvlt) parse(change []byte) (events, error) {
 }
 
 func (x *cvlt) broadcast(evs events) error {
+	if evs == nil {
+		return nil
+	}
 	for _, rcv := range x.audience {
 		if err := rcv.emit(evs); err != nil {
 			return err
