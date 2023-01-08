@@ -51,6 +51,5 @@ func (x *fifoEmitter) emit(evs events) error {
 	}
 
 	num, err := io.Copy(file, &r)
-	fmt.Println(num, "written")
 	return err
 }

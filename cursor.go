@@ -68,5 +68,4 @@ func (x *cursor) latest() ([]byte, error) {
 
 func (x *cursor) earmark() {
 	x.pos = x.size
-	fmt.Println("at position", x.pos)
 }
