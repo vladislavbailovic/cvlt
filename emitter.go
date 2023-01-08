@@ -29,8 +29,6 @@ func (x *cliEmitter) emit(evs events) error {
 	return nil
 }
 
-var fifoFileName string = "cvlt.fifo"
-
 type fifoEmitter int
 
 func newFifoEmitter() *fifoEmitter {

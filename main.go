@@ -7,6 +7,7 @@ import (
 )
 
 var syncInterval time.Duration = time.Millisecond * 500
+var fifoFileName string = "cvlt.fifo"
 
 func main() {
 	ipc := make(chan signal)
