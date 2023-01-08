@@ -51,14 +51,3 @@ func NewEvent(raw string) event {
 	}
 	return ev
 }
-
-func (x events) emit(to []emitter) error {
-	for _, event := range x {
-		for _, e := range to {
-			if err := e.update(event); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}

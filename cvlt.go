@@ -61,7 +61,9 @@ func (x cvlt) broadcast(change []byte) error {
 	if err != nil {
 		return err
 	}
-	evs.emit(x.audience)
+	for _, rcv := range x.audience {
+		rcv.emit(evs)
+	}
 	return nil
 }
 
