@@ -32,29 +32,28 @@ func (x *cliEmitter) emit(evs events) error {
 
 func (x *cliEmitter) flush() error { return nil }
 
-type fifoEmitter int
+type fifoEmitter struct {
+	w io.Writer
+}
 
 func newFifoEmitter() *fifoEmitter {
 	path := filepath.Join(os.TempDir(), fifoFileName)
 	syscall.Mkfifo(path, 0666)
-	return new(fifoEmitter)
-}
-
-func (x *fifoEmitter) emit(evs events) error {
-	path := filepath.Join(os.TempDir(), fifoFileName)
-	file, err := os.OpenFile(path, os.O_RDWR, os.ModeNamedPipe)
+	w, err := os.OpenFile(path, os.O_RDWR, os.ModeNamedPipe)
 	if err != nil {
 		panic(err)
 	}
+	return &fifoEmitter{w: w}
+	}
 
+func (x *fifoEmitter) emit(evs events) error {
 	var r bytes.Buffer
 	for _, e := range evs {
 		r.WriteString("\t- [" + e.Timestamp() + "] ")
 		r.WriteString(e.Entry() + "\n")
 	}
 
-	_, err = io.Copy(file, &r)
+	_, err := io.Copy(x.w, &r)
 	return err
 }
-
 func (x *fifoEmitter) flush() error { return nil }
