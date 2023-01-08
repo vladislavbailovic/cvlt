@@ -30,7 +30,7 @@ func newCvlt(cfg cvltConfig) (*cvlt, error) {
 
 	return &cvlt{
 		following: tails,
-		parser:    parseEvents,
+		parser:    newEventParser(cfg.logType),
 		audience:  []emitter{new(cliEmitter)},
 	}, nil
 }
@@ -68,7 +68,8 @@ func (x cvlt) broadcast(change []byte) error {
 }
 
 type cvltConfig struct {
-	root  string
-	depth int
-	match string
+	root    string
+	depth   int
+	match   string
+	logType logType
 }

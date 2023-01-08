@@ -31,9 +31,10 @@ func loop(ipc chan signal) {
 
 	c, err := newCvlt(cvltConfig{
 		// root:  "/data/docker/containers",
-		root:  "testdata",
-		match: "*-json.log",
-		depth: 1,
+		root:    "testdata",
+		match:   "*-json.log",
+		depth:   1,
+		logType: logTypeJSON,
 	})
 	if err != nil {
 		ipc <- signal{
