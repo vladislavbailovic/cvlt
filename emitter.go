@@ -12,6 +12,7 @@ import (
 
 type emitter interface {
 	emit(events) error
+	flush() error
 }
 
 type cliEmitter struct {
@@ -28,6 +29,8 @@ func (x *cliEmitter) emit(evs events) error {
 	fmt.Println(buf.String())
 	return nil
 }
+
+func (x *cliEmitter) flush() error { return nil }
 
 type fifoEmitter int
 
@@ -50,6 +53,8 @@ func (x *fifoEmitter) emit(evs events) error {
 		r.WriteString(e.Entry() + "\n")
 	}
 
-	num, err := io.Copy(file, &r)
+	_, err = io.Copy(file, &r)
 	return err
 }
+
+func (x *fifoEmitter) flush() error { return nil }

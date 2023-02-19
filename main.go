@@ -36,7 +36,7 @@ func loop(ipc chan signal) {
 			root:    "testdata",
 			match:   "*-json.log",
 			depth:   1,
-			logType: logTypeJSON,
+			logType: logTypePlain,
 		},
 		cvltConfig{
 			root:    "testdata",
