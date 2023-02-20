@@ -5,8 +5,15 @@ type source struct {
 }
 
 func newSource(path string) *source {
+	pos := cursor{path: path}
+	// Update source position on spawn
+	// Effectively, only sync changes *from this point on*
+	// As opposed to syncing all the changes from source top
+	// TODO: perhaps expose this as an option
+	pos.update()
+	pos.earmark()
 	return &source{
-		pos: cursor{path: path},
+		pos: pos,
 	}
 }
 
