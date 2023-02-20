@@ -11,46 +11,45 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
-var (
-	_awsRegion          string = "us-east-2"
-	_awsAccessKeyId     string = "AKIA...."
-	_awsSecretAccessKey string = "..."
-	_awsLogGroup        string = "whatever"
-	_awsLogStream       string = "test-test"
-	_awsBatchSize       int    = 10
-)
+const ErrAlreadyExists string = "ResourceAlreadyExistsException"
 
-// TODO: creds auth
-func getCreds() *credentials.Credentials {
+type AWSConfig struct {
+	Region          string
+	AccessKeyId     string
+	SecretAccessKey string
+	LogGroup        string
+	LogStream       string
+	BatchSize       int
+}
+
+func getCreds(cfg AWSConfig) *credentials.Credentials {
 	prv := credentials.StaticProvider{
 		Value: credentials.Value{
-			AccessKeyID:     _awsAccessKeyId,
-			SecretAccessKey: _awsSecretAccessKey,
+			AccessKeyID:     cfg.AccessKeyId,
+			SecretAccessKey: cfg.SecretAccessKey,
 		},
 	}
 	return credentials.NewCredentials(&prv)
 }
 
-// TODO: region
-func getClient() *cloudwatchlogs.CloudWatchLogs {
+func getClient(cfg AWSConfig) *cloudwatchlogs.CloudWatchLogs {
 	ses := session.Must(session.NewSession())
-	cfg := &aws.Config{
-		Region:      &_awsRegion,
-		Credentials: getCreds(),
+	stp := &aws.Config{
+		Region:      &cfg.Region,
+		Credentials: getCreds(cfg),
 	}
-	svc := cloudwatchlogs.New(ses, cfg)
+	svc := cloudwatchlogs.New(ses, stp)
 	return svc
 }
 
-// TODO: log group name
-func prepareLogGroup(c *cloudwatchlogs.CloudWatchLogs) error {
+func prepareLogGroup(c *cloudwatchlogs.CloudWatchLogs, cfg AWSConfig) error {
 	grp := cloudwatchlogs.CreateLogGroupInput{
-		LogGroupName: &_awsLogGroup,
+		LogGroupName: &cfg.LogGroup,
 	}
 	_, err := c.CreateLogGroup(&grp)
 	if err != nil {
 		if ae, ok := err.(awserr.Error); ok {
-			if ae.Code() == "ResourceAlreadyExistsException" {
+			if ae.Code() == ErrAlreadyExists {
 				return nil
 			}
 		}
@@ -59,16 +58,15 @@ func prepareLogGroup(c *cloudwatchlogs.CloudWatchLogs) error {
 	return nil
 }
 
-// TODO: log group & stream name
-func prepareLogStream(c *cloudwatchlogs.CloudWatchLogs) error {
+func prepareLogStream(c *cloudwatchlogs.CloudWatchLogs, cfg AWSConfig) error {
 	stream := cloudwatchlogs.CreateLogStreamInput{
-		LogGroupName:  &_awsLogGroup,
-		LogStreamName: &_awsLogStream,
+		LogGroupName:  &cfg.LogGroup,
+		LogStreamName: &cfg.LogStream,
 	}
 	_, err := c.CreateLogStream(&stream)
 	if err != nil {
 		if ae, ok := err.(awserr.Error); ok {
-			if ae.Code() == "ResourceAlreadyExistsException" {
+			if ae.Code() == ErrAlreadyExists {
 				return nil
 			}
 		}
@@ -77,14 +75,14 @@ func prepareLogStream(c *cloudwatchlogs.CloudWatchLogs) error {
 	return nil
 }
 
-func initialize() *cloudwatchlogs.CloudWatchLogs {
-	c := getClient()
+func initialize(cfg AWSConfig) *cloudwatchlogs.CloudWatchLogs {
+	c := getClient(cfg)
 	var err error
 
-	if err = prepareLogGroup(c); err != nil {
+	if err = prepareLogGroup(c, cfg); err != nil {
 		panic(err)
 	}
-	if err = prepareLogStream(c); err != nil {
+	if err = prepareLogStream(c, cfg); err != nil {
 		panic(err)
 	}
 
@@ -92,21 +90,22 @@ func initialize() *cloudwatchlogs.CloudWatchLogs {
 }
 
 type awsLogsEmitter struct {
+	config AWSConfig
 	client *cloudwatchlogs.CloudWatchLogs
 	batch  []*cloudwatchlogs.InputLogEvent
 }
 
-// TODO batch queue size
-func NewAwsEmitter() *awsLogsEmitter {
+func NewAwsEmitter(cfg AWSConfig) *awsLogsEmitter {
 	return &awsLogsEmitter{
-		client: initialize(),
-		batch:  make([]*cloudwatchlogs.InputLogEvent, 0, _awsBatchSize),
+		config: cfg,
+		client: initialize(cfg),
+		batch:  make([]*cloudwatchlogs.InputLogEvent, 0, cfg.BatchSize),
 	}
 }
 
 func (x *awsLogsEmitter) emit(evs events) error {
 	for _, e := range evs {
-		if len(x.batch) == _awsBatchSize {
+		if len(x.batch) == x.config.BatchSize {
 			fmt.Println("update: triggering flush")
 			x.flush()
 		}
@@ -123,7 +122,6 @@ func (x *awsLogsEmitter) emit(evs events) error {
 	return nil
 }
 
-// TODO _aws*
 func (x *awsLogsEmitter) flush() error {
 	fmt.Println("flushing!")
 	if len(x.batch) == 0 {
@@ -133,8 +131,8 @@ func (x *awsLogsEmitter) flush() error {
 
 	batch := cloudwatchlogs.PutLogEventsInput{
 		LogEvents:     x.batch,
-		LogGroupName:  &_awsLogGroup,
-		LogStreamName: &_awsLogStream,
+		LogGroupName:  &x.config.LogGroup,
+		LogStreamName: &x.config.LogStream,
 	}
 	out, err := x.client.PutLogEvents(&batch)
 	if err != nil {
@@ -144,6 +142,6 @@ func (x *awsLogsEmitter) flush() error {
 	fmt.Println(out)
 
 	fmt.Println("flush success, nerfing batch")
-	x.batch = make([]*cloudwatchlogs.InputLogEvent, 0, _awsBatchSize)
+	x.batch = make([]*cloudwatchlogs.InputLogEvent, 0, x.config.BatchSize)
 	return nil
 }
