@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	ossig "os/signal"
+	"syscall"
 	"time"
 )
 
@@ -46,6 +48,7 @@ func loop(ipc chan signal) {
 		},
 	}
 	pool := make([]*cvlt, 0, len(cfgs))
+
 	for _, cfg := range cfgs {
 		c, err := newCvlt(cfg)
 		if err != nil {
@@ -56,13 +59,24 @@ func loop(ipc chan signal) {
 		}
 		pool = append(pool, c)
 	}
+	defer func() {
+		// Flush at the end
+		for _, entry := range pool {
+			entry.flush()
+		}
+	}()
 
+	outside := make(chan os.Signal)
+	ossig.Notify(outside, os.Interrupt, syscall.SIGTERM)
+outer:
 	for {
 		select {
 		case <-ticker.C:
 			for _, entry := range pool {
 				entry.sync(ipc)
 			}
+		case <-outside:
+			break outer
 		}
 	}
 	ipc <- signal{code: sigQuit}

@@ -86,6 +86,15 @@ func (x *cvlt) broadcast(evs events) error {
 	return nil
 }
 
+func (x *cvlt) flush() error {
+	for _, rcv := range x.audience {
+		if err := rcv.flush(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type cvltConfig struct {
 	root    string
 	depth   int
