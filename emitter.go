@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type emitter interface {
@@ -23,7 +24,7 @@ func (x *cliEmitter) emit(evs events) error {
 	var buf strings.Builder
 	buf.WriteString("==" + x.name + "==\n")
 	for _, e := range evs {
-		buf.WriteString("\t- [" + e.Timestamp() + "] ")
+		buf.WriteString("\t- [" + e.Timestamp().Format(time.RFC3339) + "] ")
 		buf.WriteString(e.Entry() + "\n")
 	}
 	fmt.Println(buf.String())
@@ -49,7 +50,7 @@ func newFifoEmitter() *fifoEmitter {
 func (x *fifoEmitter) emit(evs events) error {
 	var r bytes.Buffer
 	for _, e := range evs {
-		r.WriteString("\t- [" + e.Timestamp() + "] ")
+		r.WriteString("\t- [" + e.Timestamp().Format(time.RFC3339) + "] ")
 		r.WriteString(e.Entry() + "\n")
 	}
 

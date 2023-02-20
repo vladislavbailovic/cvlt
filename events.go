@@ -1,16 +1,18 @@
 package main
 
+import "time"
+
 type events []event
 
 type event interface {
-	Timestamp() string
+	Timestamp() time.Time
 	Entry() string
 }
 
 type rawEvent string
 
-func (x rawEvent) Timestamp() string {
-	return ""
+func (x rawEvent) Timestamp() time.Time {
+	return time.Now()
 }
 
 func (x rawEvent) Entry() string {
@@ -22,8 +24,12 @@ type jsonLogEvent struct {
 	Log  string `json:"log"`
 }
 
-func (x jsonLogEvent) Timestamp() string {
-	return x.Time
+func (x jsonLogEvent) Timestamp() time.Time {
+	tm, err := time.Parse(time.RFC3339Nano, x.Time)
+	if err != nil {
+		return time.Now()
+	}
+	return tm
 }
 
 func (x jsonLogEvent) Entry() string {
