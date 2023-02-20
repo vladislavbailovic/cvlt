@@ -28,12 +28,6 @@ func newCvlt(cfg cvltConfig) (*cvlt, error) {
 		}
 	}
 
-	// infix := "*"
-	// if cfg.depth > 1 {
-	// 	infix = "**"
-	// }
-	// name := filepath.Join(cfg.root, infix, cfg.match)
-	// emt := &cliEmitter{name: name}
 	emt := newFifoEmitter()
 
 	return &cvlt{

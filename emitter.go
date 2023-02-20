@@ -44,7 +44,7 @@ func newFifoEmitter() *fifoEmitter {
 		panic(err)
 	}
 	return &fifoEmitter{w: w}
-	}
+}
 
 func (x *fifoEmitter) emit(evs events) error {
 	var r bytes.Buffer
@@ -56,4 +56,5 @@ func (x *fifoEmitter) emit(evs events) error {
 	_, err := io.Copy(x.w, &r)
 	return err
 }
+
 func (x *fifoEmitter) flush() error { return nil }
