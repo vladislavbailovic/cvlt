@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -56,3 +57,23 @@ func Test_getClient(t *testing.T) {
 // 	}
 // 	credsTest(val, t)
 // }
+
+func Test_EventConversion(t *testing.T) {
+	suite := map[string]string{
+		"2023-01-08T02:00:00Z": "old",
+		"2032-01-08T02:00:00Z": "future",
+	}
+	for ts, want := range suite {
+		t.Run(ts, func(t *testing.T) {
+			event := jsonLogEvent{Time: ts, Log: "wat"}
+			_, err := logEvent2InputLogEvent(event)
+			if err == nil {
+				t.Error("expected error")
+			}
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("want %q, got %q",
+					want, err)
+			}
+		})
+	}
+}

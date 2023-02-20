@@ -103,20 +103,41 @@ func NewAwsEmitter(cfg AWSConfig) *awsLogsEmitter {
 	}
 }
 
+func logEvent2InputLogEvent(e event) (*cloudwatchlogs.InputLogEvent, error) {
+	now := time.Now()
+	cutoff := now.Add(-24 * 14 * time.Hour)
+
+	timestamp := e.Timestamp()
+	if timestamp.After(now) {
+		return nil, fmt.Errorf("event in future: %v\n", timestamp)
+	}
+	if timestamp.Before(cutoff) {
+		return nil, fmt.Errorf("event too old: %v\n", timestamp)
+	}
+
+	msg := e.Entry()
+	tstamp := now.UnixMicro() / 1000
+	return &cloudwatchlogs.InputLogEvent{
+		Timestamp: &tstamp,
+		Message:   &msg,
+	}, nil
+}
+
 func (x *awsLogsEmitter) emit(evs events) error {
 	for _, e := range evs {
 		if len(x.batch) == x.config.BatchSize {
 			fmt.Println("update: triggering flush")
 			x.flush()
 		}
-		now := time.Now().UnixMicro() / 1000
-		msg := e.Entry()
-		logEvent := cloudwatchlogs.InputLogEvent{
-			Timestamp: &now,
-			Message:   &msg,
+
+		logEvent, err := logEvent2InputLogEvent(e)
+		if err != nil {
+			fmt.Println(err)
+			continue
 		}
-		fmt.Printf("\t- creating new event: %+v\n", logEvent)
-		x.batch = append(x.batch, &logEvent)
+
+		fmt.Printf("\t- creating new event: %+v\n", &logEvent)
+		x.batch = append(x.batch, logEvent)
 		fmt.Println("new batch size", len(x.batch))
 	}
 	return nil
